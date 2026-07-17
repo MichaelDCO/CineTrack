@@ -4,9 +4,13 @@ Application web installable sur iPhone (**PWA**) pour suivre vos séries et film
 recherchez un titre, ajoutez-le à votre liste, puis **cochez saison par saison
 (et épisode par épisode) ce que vous avez vu**.
 
-- **Base de données** : [TMDB](https://www.themoviedb.org/) (The Movie Database) —
-  gratuite, en français, mise à jour en continu. L'app interroge TMDB en direct,
-  donc les nouvelles saisons/épisodes apparaissent automatiquement.
+- **Base de données séries** : [TVmaze](https://www.tvmaze.com/) — gratuite,
+  **sans aucune clé ni compte à créer**, mise à jour en continu. Les nouvelles
+  saisons/épisodes apparaissent automatiquement.
+- **Base de données films** : [OMDb](https://www.omdbapi.com/) (données IMDb) —
+  clé gratuite obtenue par simple e-mail, sans justification (facultative : sans
+  elle, l'app fonctionne pour les séries).
+- Titres et résumés sont fournis en anglais (ou version originale) par ces sources.
 - **Vos données** : stockées uniquement sur votre appareil (localStorage).
   Aucune inscription, aucun serveur à vous. Export/restauration possible dans Réglages.
 - **Hors-ligne** : l'app s'ouvre même sans connexion (votre liste et votre suivi
@@ -58,21 +62,19 @@ Puis ouvrez `http://localhost:3000` (ou `:8000`).
 > l'app installée**. Si vous avez déjà des données dans Safari, transférez-les via
 > Réglages → Exporter (dans Safari) puis Réglages → Restaurer (dans l'app).
 
-## 3. Obtenir une clé API TMDB (gratuit, 5 minutes)
+## 3. (Facultatif) Clé OMDb pour les films — 30 secondes
 
-À faire **dans l'app installée** :
+**Les séries fonctionnent immédiatement, sans aucune clé.** Pour rechercher
+aussi des films, il faut une clé OMDb gratuite :
 
-1. Créez un compte gratuit sur <https://www.themoviedb.org/signup>.
-2. Ouvrez <https://www.themoviedb.org/settings/api> et demandez une clé
-   (type **Developer**, usage personnel — acceptez les conditions, remplissez
-   le petit formulaire, par ex. « application personnelle de suivi de séries »).
-3. Copiez soit la **Clé d'API** (v3, une trentaine de caractères),
-   soit le **Jeton d'accès en lecture à l'API** (v4, très long, commence par `eyJ`).
-   Les deux fonctionnent dans CinéTrack.
-4. Dans l'app, onglet **Réglages** → collez la clé → **Enregistrer**.
-   Un « ✓ Clé valide » confirme que tout est prêt.
+1. Ouvrez <https://www.omdbapi.com/apikey.aspx>.
+2. Choisissez **FREE** (1 000 requêtes/jour, largement suffisant) et entrez
+   votre adresse e-mail — aucune justification demandée.
+3. Cliquez le **lien d'activation** reçu par e-mail (sinon la clé est refusée).
+4. Dans l'app (installée), onglet **Réglages** → collez la clé → **Enregistrer**.
+   Un « ✓ Clé valide » confirme que la recherche de films est active.
 
-> La clé reste sur votre appareil ; elle n'est envoyée qu'à TMDB.
+> La clé reste sur votre appareil ; elle n'est envoyée qu'à OMDb.
 
 ## 4. Utilisation
 
@@ -85,7 +87,7 @@ Puis ouvrez `http://localhost:3000` (ou `:8000`).
   barre de progression par série.
 - **Actualiser** : la fiche se met à jour automatiquement à l'ouverture ;
   le bouton ⟳ force le rechargement (nouvelles saisons, etc.).
-- **Réglages** : clé TMDB, export/restauration de sauvegarde, remise à zéro.
+- **Réglages** : clé OMDb (films), export/restauration de sauvegarde, remise à zéro.
 
 ## 5. Sauvegarde
 
@@ -100,7 +102,7 @@ fichier JSON est téléchargé (et copié dans le presse-papier). Pour restaurer
 cinetrack/
 ├── index.html            # structure de l'app
 ├── css/styles.css        # thème sombre, adapté iPhone (safe areas)
-├── js/app.js             # logique : TMDB, bibliothèque, suivi, réglages
+├── js/app.js             # logique : TVmaze/OMDb, bibliothèque, suivi, réglages
 ├── sw.js                 # service worker (hors-ligne + cache des affiches)
 ├── manifest.webmanifest  # manifeste PWA (nom, icônes, plein écran)
 ├── icons/                # icônes 180/192/512 px
@@ -109,4 +111,5 @@ cinetrack/
 
 ---
 
-*Ce produit utilise l'API TMDB sans être approuvé ni certifié par TMDB.*
+*Données séries : [TVmaze](https://www.tvmaze.com/) (licence CC BY-SA) ·
+Données films : [OMDb API](https://www.omdbapi.com/).*

@@ -1,12 +1,12 @@
 /* ============================================================
    CinéTrack — service worker
    - Coquille de l'app en cache (fonctionne hors-ligne)
-   - Affiches TMDB en cache (limité)
-   - Appels API TMDB : toujours réseau (jamais mis en cache ici)
+   - Affiches (TVmaze / OMDb-Amazon) en cache (limité)
+   - Appels API (TVmaze, OMDb) : toujours réseau (jamais mis en cache ici)
    ============================================================ */
 'use strict';
 
-const VERSION = 'cinetrack-v2';
+const VERSION = 'cinetrack-v3';
 const NETWORK_TIMEOUT_MS = 3500; // au-delà, on sert la version en cache (« lie-fi », réseau très lent)
 const SHELL_CACHE = VERSION + '-shell';
 const IMG_CACHE = VERSION + '-img';
@@ -57,11 +57,12 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
 
-  // API TMDB : réseau uniquement (les données doivent rester fraîches)
-  if (url.hostname === 'api.themoviedb.org') return;
+  // APIs : réseau uniquement (les données doivent rester fraîches)
+  if (url.hostname === 'api.tvmaze.com' || url.hostname === 'www.omdbapi.com') return;
 
-  // Affiches TMDB : cache d'abord, réseau sinon
-  if (url.hostname === 'image.tmdb.org') {
+  // Affiches : cache d'abord, réseau sinon
+  const IMG_HOSTS = ['static.tvmaze.com', 'm.media-amazon.com', 'ia.media-imdb.com'];
+  if (IMG_HOSTS.indexOf(url.hostname) !== -1) {
     event.respondWith(
       caches.open(IMG_CACHE).then(async (cache) => {
         const hit = await cache.match(req);
