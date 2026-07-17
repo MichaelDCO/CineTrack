@@ -134,6 +134,7 @@ function normalizeItems(rawItems) {
       title: typeof raw.title === 'string' ? raw.title : '',
       poster: typeof raw.poster === 'string' ? raw.poster : null,
       year: typeof raw.year === 'string' ? raw.year : '',
+      docu: !!raw.docu,
       addedAt: Number(raw.addedAt) || Date.now(),
       updatedAt: Number(raw.updatedAt) || Date.now(),
     };
@@ -321,6 +322,7 @@ async function fetchTvDetail(id) {
     status: show.status || '',
     genres: (show.genres || []).join(', '),
     overview: stripHtml(show.summary),
+    docu: show.type === 'Documentary',
     seasons: eps.seasons.map(s => ({ n: s.n, name: s.name, count: s.count, aired: s.aired })),
   };
 }
@@ -337,6 +339,7 @@ async function fetchMovieDetail(id) {
     runtime: clean(m.Runtime),
     genres: clean(m.Genre),
     overview: clean(m.Plot),
+    docu: /documentary/i.test(clean(m.Genre)),
   };
 }
 
@@ -423,6 +426,7 @@ function libraryCard(item) {
     const p = tvProgress(item);
     const pct = p.total ? Math.round((p.seen / p.total) * 100) : 0;
     const sub = el('div', { class: 'card-sub' }, item.year || '');
+    if (item.docu) sub.appendChild(el('span', { class: 'badge', text: 'Docu' }));
     if (item.status && STATUS_FR[item.status]) sub.appendChild(el('span', { class: 'badge', text: STATUS_FR[item.status] }));
     if (isDone(item)) sub.appendChild(el('span', { class: 'badge done', text: '✓ Vue' }));
     info.appendChild(sub);
@@ -433,6 +437,7 @@ function libraryCard(item) {
     ));
   } else {
     const sub = el('div', { class: 'card-sub' }, item.year || '');
+    if (item.docu) sub.appendChild(el('span', { class: 'badge', text: 'Docu' }));
     sub.appendChild(el('span', {
       class: 'badge' + (item.watched ? ' done' : ''),
       text: item.watched ? '✓ Vu' : 'À voir',
@@ -499,6 +504,7 @@ async function runSearch(query, moviePage) {
           title: show.name || '',
           year: yearOf(show.premiered),
           poster: show.image ? show.image.medium : null,
+          docu: show.type === 'Documentary',
         }));
       }
     }
@@ -559,6 +565,7 @@ function searchCard(r) {
 
   const sub = el('div', { class: 'card-sub' },
     el('span', { class: 'badge', text: r.type === 'tv' ? 'Série' : 'Film' }),
+    r.docu ? el('span', { class: 'badge', text: 'Docu' }) : null,
     r.year ? el('span', { text: r.year }) : null,
   );
 
@@ -605,6 +612,7 @@ function createItemFromDetail(type, d) {
     poster: d.poster || null,
     year: d.year || '',
     status: d.status || '',
+    docu: !!d.docu,
     seasons: (d.seasons || []).map(s => ({ n: s.n, name: s.name, count: s.count, aired: s.aired })),
     watched: {},
     addedAt: Date.now(),
@@ -615,6 +623,7 @@ function createItemFromDetail(type, d) {
     title: d.title || '',
     poster: d.poster || null,
     year: d.year || '',
+    docu: !!d.docu,
     watched: false,
     addedAt: Date.now(),
     updatedAt: Date.now(),
@@ -629,6 +638,7 @@ function refreshItemFromDetail(item, d) {
   item.title = d.title || item.title;
   item.poster = d.poster || item.poster;
   item.year = d.year || item.year;
+  item.docu = !!d.docu;
   if (item.type === 'tv') {
     item.status = d.status || item.status;
     item.seasons = (d.seasons || []).map(s => ({ n: s.n, name: s.name, count: s.count, aired: s.aired }));
