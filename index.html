@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>CinéTrack — Suivi séries &amp; films</title>
+  <meta name="description" content="Suivez vos séries et films : cochez les saisons et épisodes vus. Données TMDB, stockage local.">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0f1115">
+
+  <!-- iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CinéTrack">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <header id="topbar">
+    <h1 id="topbar-title">CinéTrack</h1>
+  </header>
+
+  <main id="main">
+
+    <!-- Conseil affiché dans Safari iOS tant que l'app n'est pas installée -->
+    <div id="install-banner" class="install-banner hidden">
+      <p><strong>Conseil&nbsp;:</strong> installez l'app avant de saisir vos données — bouton
+        Partager&nbsp;→ «&nbsp;Sur l'écran d'accueil&nbsp;». Sur iPhone, les données saisies ici
+        (Safari) ne sont <strong>pas</strong> partagées avec l'app installée&nbsp;; utilisez
+        Réglages&nbsp;→ Exporter/Restaurer pour les transférer.</p>
+      <button id="install-banner-close" class="install-banner-close" aria-label="Masquer ce conseil">✕</button>
+    </div>
+
+    <!-- ============ MA LISTE ============ -->
+    <section id="view-library" class="view">
+      <div class="seg-row">
+        <div class="segmented" role="tablist" aria-label="Type">
+          <button class="seg-btn active" data-type="tv" role="tab" aria-selected="true">Séries</button>
+          <button class="seg-btn" data-type="movie" role="tab" aria-selected="false">Films</button>
+        </div>
+      </div>
+      <div class="chips" id="lib-chips">
+        <button class="chip active" data-status="all">Tout</button>
+        <button class="chip" data-status="ongoing">En cours</button>
+        <button class="chip" data-status="done">Terminé</button>
+      </div>
+      <div id="lib-list" class="card-list"></div>
+      <div id="lib-empty" class="empty hidden">
+        <div class="empty-icon">🎬</div>
+        <p class="empty-title" id="lib-empty-title">Votre liste est vide</p>
+        <p class="empty-sub">Utilisez l'onglet <strong>Recherche</strong> pour ajouter des séries et des films.</p>
+        <button class="btn btn-primary" id="lib-empty-search">Rechercher</button>
+      </div>
+    </section>
+
+    <!-- ============ RECHERCHE ============ -->
+    <section id="view-search" class="view hidden">
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input type="search" id="search-input" placeholder="Série, film…"
+               autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+               enterkeyhint="search" aria-label="Rechercher une série ou un film">
+        <button id="search-clear" class="search-clear hidden" aria-label="Effacer">✕</button>
+      </div>
+      <div id="search-status" class="search-status"></div>
+      <div id="search-results" class="card-list"></div>
+    </section>
+
+    <!-- ============ RÉGLAGES ============ -->
+    <section id="view-settings" class="view hidden">
+      <div id="settings-content"></div>
+    </section>
+
+  </main>
+
+  <!-- ============ FICHE DÉTAIL (plein écran) ============ -->
+  <div id="detail" class="detail hidden" role="dialog" aria-modal="true">
+    <header class="detail-topbar">
+      <button id="detail-back" class="icon-btn" aria-label="Retour">‹</button>
+      <span id="detail-title" class="detail-topbar-title"></span>
+      <button id="detail-refresh" class="icon-btn" aria-label="Actualiser">⟳</button>
+    </header>
+    <div id="detail-body" class="detail-body"></div>
+  </div>
+
+  <div id="offline-banner" class="offline-banner hidden">Hors connexion — recherche et mises à jour indisponibles</div>
+
+  <nav id="tabbar" aria-label="Navigation principale">
+    <button class="tab-btn active" data-tab="library">
+      <span class="tab-icon">📺</span><span class="tab-label">Ma liste</span>
+    </button>
+    <button class="tab-btn" data-tab="search">
+      <span class="tab-icon">🔍</span><span class="tab-label">Recherche</span>
+    </button>
+    <button class="tab-btn" data-tab="settings">
+      <span class="tab-icon">⚙️</span><span class="tab-label">Réglages</span>
+    </button>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <noscript>
+    <div style="padding:2rem;text-align:center;color:#fff">CinéTrack nécessite JavaScript.</div>
+  </noscript>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
