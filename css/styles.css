@@ -152,6 +152,7 @@ body.modal-open {
 
 .chips {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 14px;
   justify-content: center;
@@ -173,6 +174,24 @@ body.modal-open {
   background: var(--accent-soft);
   border-color: var(--accent);
 }
+
+.chip.chip-drop.active {
+  color: var(--red);
+  background: rgba(248, 113, 113, 0.12);
+  border-color: var(--red);
+}
+
+/* ---------- Sélecteur de statut (fiche détail) ---------- */
+.status-block { margin-bottom: 18px; }
+
+.status-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.status-chips { justify-content: flex-start; margin-bottom: 0; }
 
 /* ---------- Listes de cartes (bibliothèque + recherche) ---------- */
 .card-list { display: flex; flex-direction: column; gap: 10px; }
@@ -246,6 +265,8 @@ body.modal-open {
 }
 
 .badge.done { color: var(--green); border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.1); }
+
+.badge.drop { color: var(--red); border-color: rgba(248, 113, 113, 0.4); background: rgba(248, 113, 113, 0.1); }
 
 .progress-wrap { margin-top: 7px; display: flex; align-items: center; gap: 8px; }
 

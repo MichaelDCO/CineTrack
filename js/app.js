@@ -9,7 +9,7 @@
 // ------------------------------------------------------------
 // Constantes
 // ------------------------------------------------------------
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 const TVMAZE_BASE = 'https://api.tvmaze.com';
 const OMDB_BASE = 'https://www.omdbapi.com/';
 const LS_LIB = 'cinetrack.library.v2'; // v1 = ancienne version TMDB (identifiants incompatibles)
@@ -138,6 +138,9 @@ function normalizeItems(rawItems) {
       addedAt: Number(raw.addedAt) || Date.now(),
       updatedAt: Number(raw.updatedAt) || Date.now(),
     };
+    if (raw.userStatus === 'watching' || raw.userStatus === 'towatch' || raw.userStatus === 'dropped') {
+      item.userStatus = raw.userStatus;
+    }
     if (type === 'tv') {
       item.status = typeof raw.status === 'string' ? raw.status : '';
       item.seasons = (Array.isArray(raw.seasons) ? raw.seasons : [])
@@ -211,6 +214,20 @@ function isDone(item) {
   if (item.type === 'movie') return !!item.watched;
   const p = tvProgress(item);
   return p.total > 0 && p.seen >= p.total;
+}
+
+/**
+ * Statut effectif d'un élément : le statut manuel (userStatus) et l'avancement
+ * réel se combinent — « Abandonné » prime, puis « tout vu », puis le choix manuel,
+ * sinon déduction automatique depuis la progression.
+ * Valeurs : 'towatch' | 'watching' | 'done' | 'dropped'
+ */
+function itemStatus(item) {
+  if (item.userStatus === 'dropped') return 'dropped';
+  if (isDone(item)) return 'done';
+  if (item.userStatus === 'watching' || item.userStatus === 'towatch') return item.userStatus;
+  if (item.type === 'movie') return 'towatch';
+  return tvProgress(item).seen > 0 ? 'watching' : 'towatch';
 }
 
 // ------------------------------------------------------------
@@ -374,8 +391,8 @@ function switchTab(tab) {
 // Vue : Ma liste
 // ------------------------------------------------------------
 const CHIP_LABELS = {
-  tv: { all: 'Toutes', ongoing: 'En cours', done: 'Terminées' },
-  movie: { all: 'Tous', ongoing: 'À voir', done: 'Vus' },
+  tv: { all: 'Toutes', towatch: 'À voir', watching: 'En cours', done: 'Terminées', dropped: 'Abandonnées' },
+  movie: { all: 'Tous', towatch: 'À voir', watching: 'En cours', done: 'Vus', dropped: 'Abandonnés' },
 };
 
 function updateChipLabels() {
@@ -388,11 +405,7 @@ function renderLibrary() {
 
   const items = Object.values(lib.items)
     .filter(it => it.type === ui.libType)
-    .filter(it => {
-      if (ui.libStatus === 'done') return isDone(it);
-      if (ui.libStatus === 'ongoing') return !isDone(it);
-      return true;
-    })
+    .filter(it => ui.libStatus === 'all' || itemStatus(it) === ui.libStatus)
     .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
   const anyOfType = Object.values(lib.items).some(it => it.type === ui.libType);
@@ -429,6 +442,8 @@ function libraryCard(item) {
     if (item.docu) sub.appendChild(el('span', { class: 'badge', text: 'Docu' }));
     if (item.status && STATUS_FR[item.status]) sub.appendChild(el('span', { class: 'badge', text: STATUS_FR[item.status] }));
     if (isDone(item)) sub.appendChild(el('span', { class: 'badge done', text: '✓ Vue' }));
+    if (itemStatus(item) === 'dropped') sub.appendChild(el('span', { class: 'badge drop', text: 'Abandonnée' }));
+    else if (item.userStatus === 'towatch') sub.appendChild(el('span', { class: 'badge', text: 'À voir' }));
     info.appendChild(sub);
     info.appendChild(el('div', { class: 'progress-wrap' },
       el('div', { class: 'progress-bar' },
@@ -438,10 +453,14 @@ function libraryCard(item) {
   } else {
     const sub = el('div', { class: 'card-sub' }, item.year || '');
     if (item.docu) sub.appendChild(el('span', { class: 'badge', text: 'Docu' }));
-    sub.appendChild(el('span', {
-      class: 'badge' + (item.watched ? ' done' : ''),
-      text: item.watched ? '✓ Vu' : 'À voir',
-    }));
+    const st = itemStatus(item);
+    const MOVIE_BADGES = {
+      towatch: ['À voir', ''],
+      watching: ['En cours', ''],
+      done: ['✓ Vu', ' done'],
+      dropped: ['Abandonné', ' drop'],
+    };
+    sub.appendChild(el('span', { class: 'badge' + MOVIE_BADGES[st][1], text: MOVIE_BADGES[st][0] }));
     info.appendChild(sub);
   }
 
@@ -776,9 +795,11 @@ function renderDetail(type, d) {
 // ---------- Détail série ----------
 function renderTvSection(body, d) {
   const actions = el('div', { class: 'detail-actions' });
+  const statusBox = el('div');
   const progressBox = el('div', { class: 'global-progress hidden' });
   const seasonList = el('div', { class: 'season-list' });
   body.appendChild(actions);
+  body.appendChild(statusBox);
   body.appendChild(progressBox);
   body.appendChild(seasonList);
 
@@ -803,6 +824,9 @@ function renderTvSection(body, d) {
         toast('Ajouté à votre liste');
       } }));
     }
+
+    statusBox.textContent = '';
+    statusBox.appendChild(statusSelector('tv', d.id, () => ensureTvItem(d), redrawHeader));
 
     progressBox.textContent = '';
     if (item) {
@@ -853,8 +877,51 @@ function getWatchedSet(item, seasonN) {
 function setWatchedSet(item, seasonN, set) {
   if (set.size) item.watched[seasonN] = Array.from(set).sort((a, b) => a - b);
   else delete item.watched[seasonN];
+  // pointer des épisodes reprend la main sur un statut posé à la main (À voir/Abandonné…)
+  delete item.userStatus;
   item.updatedAt = Date.now();
   saveLib();
+}
+
+// ------------------------------------------------------------
+// Sélecteur de statut manuel (fiche film ou série)
+// ------------------------------------------------------------
+const USER_STATUSES = [
+  { key: 'towatch', label: 'À voir' },
+  { key: 'watching', label: 'En cours' },
+  { key: 'dropped', label: 'Abandonné' },
+];
+
+/**
+ * ensureItem() doit renvoyer l'élément de bibliothèque (en le créant au besoin).
+ * onChanged() est rappelé après chaque modification pour redessiner la fiche.
+ */
+function statusSelector(type, id, ensureItem, onChanged) {
+  const existing = getItem(type, id);
+  const current = existing ? existing.userStatus : null;
+  const row = el('div', { class: 'chips status-chips' });
+  for (const s of USER_STATUSES) {
+    const label = (s.key === 'dropped' && type === 'tv') ? 'Abandonnée' : s.label;
+    const active = current === s.key;
+    row.appendChild(el('button', {
+      class: 'chip' + (active ? ' active' + (s.key === 'dropped' ? ' chip-drop' : '') : ''),
+      text: label,
+      'aria-pressed': active ? 'true' : 'false',
+      onclick: () => {
+        const it = ensureItem();
+        if (it.userStatus === s.key) delete it.userStatus; // re-taper désélectionne (statut automatique)
+        else it.userStatus = s.key;
+        it.updatedAt = Date.now();
+        saveLib();
+        toast(it.userStatus ? 'Statut : ' + label : 'Statut automatique');
+        onChanged();
+      },
+    }));
+  }
+  return el('div', { class: 'status-block' },
+    el('div', { class: 'status-label', text: 'Statut' }),
+    row,
+  );
 }
 
 function seasonRow(d, s, onChange) {
@@ -1033,12 +1100,19 @@ function renderMovieSection(body, d) {
         if (!it) { it = createItemFromDetail('movie', d); toast('Ajouté à votre liste'); }
         it.watched = !it.watched;
         it.watchedAt = it.watched ? Date.now() : null;
+        delete it.userStatus; // marquer vu/non vu reprend la main sur le statut manuel
         it.updatedAt = Date.now();
         saveLib();
         redraw();
       },
     });
     actions.appendChild(watchBtn);
+
+    actions.appendChild(statusSelector('movie', d.id, () => {
+      let it = getItem('movie', d.id);
+      if (!it) { it = createItemFromDetail('movie', d); toast('Ajouté à votre liste'); }
+      return it;
+    }, redraw));
 
     if (item) {
       actions.appendChild(el('button', { class: 'btn btn-danger btn-block', text: 'Retirer de ma liste', onclick: () => {

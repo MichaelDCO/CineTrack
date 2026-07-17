@@ -83,8 +83,12 @@ aussi des films, il faut une clé OMDb gratuite :
 - **Fiche série** : cochez la case d'une **saison** pour tout marquer vu,
   ou dépliez la saison pour cocher **épisode par épisode**.
   Une case « – » indique une saison partiellement vue.
-- **Ma liste** : onglets Séries/Films, filtres « En cours » / « Terminé »,
-  barre de progression par série.
+- **Ma liste** : onglets Séries/Films, filtres « À voir / En cours / Terminé /
+  Abandonné », barre de progression par série.
+- **Statut** : sur chaque fiche, choisissez « À voir », « En cours » ou
+  « Abandonné » (re-taper le statut le désélectionne). Le statut « Terminé »
+  est automatique quand tout est coché, et pointer un épisode reprend la main
+  sur un statut posé à la main.
 - **Actualiser** : la fiche se met à jour automatiquement à l'ouverture ;
   le bouton ⟳ force le rechargement (nouvelles saisons, etc.).
 - **Réglages** : clé OMDb (films), export/restauration de sauvegarde, remise à zéro.
